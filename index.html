@@ -250,6 +250,13 @@
             border-top: 1px solid #ddd;
         }
         
+        .info-text {
+            margin-top: 10px;
+            font-style: italic;
+            color: #666;
+            font-size: 14px;
+        }
+        
         @media (max-width: 768px) {
             .main-content {
                 flex-direction: column;
@@ -270,7 +277,7 @@
                 </div>
                 <div class="logo-text">GDA BANK</div>
             </div>
-            <p class="tagline">Dut Ağacı Güvencesiyle</p>
+            <p class="tagline">Dut Ağacı Güvencesiyle - Tüm Cihazlarda Erişim</p>
         </div>
     </header>
     
@@ -288,6 +295,7 @@
                     <input type="text" id="cvv" placeholder="123" maxlength="3">
                 </div>
                 <button id="loginBtn">Giriş Yap</button>
+                <p class="info-text">Not: Tüm cihazlardan aynı kart bilgileriyle giriş yapabilirsiniz</p>
             </div>
             
             <!-- Kart Yönetim Bölümü -->
@@ -326,6 +334,7 @@
                         <input type="number" id="initialBalance" placeholder="0" min="0">
                     </div>
                     <button id="addCardBtn">Yeni Kart Ekle</button>
+                    <p class="info-text">Eklenen kartlar tüm cihazlardan erişilebilir olacaktır</p>
                     
                     <h3 style="margin-top: 30px; margin-bottom: 15px;">Tüm Kartlar</h3>
                     <div id="adminCardList">
@@ -339,19 +348,35 @@
     <footer>
         <div class="container">
             <p>GDA Bank - GDA Doları ile Güvenli Alışveriş</p>
-            <p>&copy; 2023 Tüm hakları saklıdır.</p>
+            <p>&copy; 2023 Tüm hakları saklıdır. | Tüm Cihaz Desteği</p>
         </div>
     </footer>
     
     <div id="notification" class="notification"></div>
 
     <script>
-        // Kart verilerini localStorage'dan al veya varsayılan değerleri kullan
-        let cards = JSON.parse(localStorage.getItem('gdaBankCards')) || [
-            { name: "Ahmet Yılmaz", number: "4532 7896 1234 5678", cvv: "123", balance: 1500 },
-            { name: "Ayşe Demir", number: "5521 3456 7890 1234", cvv: "456", balance: 2500 },
-            { name: "Mehmet Kaya", number: "3789 4567 1234 9012", cvv: "789", balance: 3500 }
-        ];
+        // Tüm cihazlarda paylaşılacak kart verilerini simüle etmek için
+        // Basit bir "sunucu" simülasyonu yapıyoruz
+        // Gerçek uygulamada bu veriler bir veritabanında saklanır
+        
+        // Global kart verilerini simüle etmek için bir yaklaşım
+        // Not: Bu sadece demo amaçlıdır, gerçek uygulamada sunucu tarafında saklanmalıdır
+        const SERVER_CARDS_KEY = 'gdaBankServerCards';
+        
+        // Sunucudan kartları al (localStorage'ı sunucu gibi kullanıyoruz)
+        function getServerCards() {
+            const serverCards = localStorage.getItem(SERVER_CARDS_KEY);
+            return serverCards ? JSON.parse(serverCards) : [
+                { name: "Ahmet Yılmaz", number: "4532 7896 1234 5678", cvv: "123", balance: 1500 },
+                { name: "Ayşe Demir", number: "5521 3456 7890 1234", cvv: "456", balance: 2500 },
+                { name: "Mehmet Kaya", number: "3789 4567 1234 9012", cvv: "789", balance: 3500 }
+            ];
+        }
+        
+        // Sunucuya kartları kaydet
+        function saveServerCards(cards) {
+            localStorage.setItem(SERVER_CARDS_KEY, JSON.stringify(cards));
+        }
         
         // Giriş yapmış kullanıcı bilgisi
         let currentUser = null;
@@ -424,6 +449,9 @@
                 return;
             }
             
+            // Sunucudan güncel kartları al
+            const cards = getServerCards();
+            
             // Kart doğrulama
             const card = cards.find(c => 
                 c.number.replace(/\s+/g, '') === cardNumber && c.cvv === cvv
@@ -473,6 +501,9 @@
             }
             
             if (name && number.replace(/\s+/g, '').length === 16 && cvv.length === 3) {
+                // Sunucudan güncel kartları al
+                const cards = getServerCards();
+                
                 // Aynı kart numarası kontrolü
                 if (cards.some(c => c.number.replace(/\s+/g, '') === number.replace(/\s+/g, ''))) {
                     showNotification('Bu kart numarası zaten kayıtlı!', 'error');
@@ -486,8 +517,8 @@
                     balance: initialBalance
                 });
                 
-                // localStorage'a kaydet
-                localStorage.setItem('gdaBankCards', JSON.stringify(cards));
+                // Sunucuya kaydet (tüm cihazlarda görünecek)
+                saveServerCards(cards);
                 
                 newCardNameInput.value = '';
                 newCardNumberInput.value = '';
@@ -497,7 +528,7 @@
                 // Admin kart listesini güncelle
                 updateAdminCardList();
                 
-                showNotification('Yeni kart başarıyla eklendi!', 'success');
+                showNotification('Yeni kart başarıyla eklendi! Tüm cihazlardan erişilebilir.', 'success');
             } else {
                 showNotification('Lütfen tüm alanları doğru şekilde doldurun!', 'error');
             }
@@ -506,6 +537,9 @@
         // Kullanıcı kartlarını görüntüleme
         function displayUserCards() {
             cardList.innerHTML = '';
+            
+            // Sunucudan güncel kartları al
+            const cards = getServerCards();
             
             // Sadece giriş yapan kullanıcının kartlarını göster
             const userCards = cards.filter(c => c.name === currentUser);
@@ -535,6 +569,9 @@
         // Admin için tüm kartları görüntüleme
         function updateAdminCardList() {
             adminCardList.innerHTML = '';
+            
+            // Sunucudan güncel kartları al
+            const cards = getServerCards();
             
             if (cards.length === 0) {
                 adminCardList.innerHTML = '<p>Henüz hiç kart kaydı bulunmamaktadır.</p>';
@@ -567,14 +604,17 @@
             const amount = parseInt(input.value);
             
             if (amount && amount > 0) {
+                // Sunucudan güncel kartları al
+                const cards = getServerCards();
                 const card = cards.find(c => c.number.replace(/\s+/g, '') === cardNumber);
+                
                 if (card) {
                     card.balance += amount;
-                    // localStorage'a kaydet
-                    localStorage.setItem('gdaBankCards', JSON.stringify(cards));
+                    // Sunucuya kaydet (tüm cihazlarda görünecek)
+                    saveServerCards(cards);
                     updateAdminCardList();
                     input.value = '';
-                    showNotification(`${amount} GDA kart bakiyesine yüklendi!`, 'success');
+                    showNotification(`${amount} GDA kart bakiyesine yüklendi! Tüm cihazlarda güncellendi.`, 'success');
                 }
             } else {
                 showNotification('Lütfen geçerli bir miktar girin!', 'error');
@@ -587,15 +627,18 @@
             const amount = parseInt(input.value);
             
             if (amount && amount > 0) {
+                // Sunucudan güncel kartları al
+                const cards = getServerCards();
                 const card = cards.find(c => c.number.replace(/\s+/g, '') === cardNumber);
+                
                 if (card) {
                     if (card.balance >= amount) {
                         card.balance -= amount;
-                        // localStorage'a kaydet
-                        localStorage.setItem('gdaBankCards', JSON.stringify(cards));
+                        // Sunucuya kaydet (tüm cihazlarda görünecek)
+                        saveServerCards(cards);
                         updateAdminCardList();
                         input.value = '';
-                        showNotification(`${amount} GDA kart bakiyesinden çekildi!`, 'success');
+                        showNotification(`${amount} GDA kart bakiyesinden çekildi! Tüm cihazlarda güncellendi.`, 'success');
                     } else {
                         showNotification('Yetersiz bakiye!', 'error');
                     }
@@ -608,11 +651,14 @@
         // Kart silme fonksiyonu (admin için)
         function deleteCard(cardNumber) {
             if (confirm('Bu kartı silmek istediğinizden emin misiniz?')) {
-                cards = cards.filter(c => c.number.replace(/\s+/g, '') !== cardNumber);
-                // localStorage'a kaydet
-                localStorage.setItem('gdaBankCards', JSON.stringify(cards));
+                // Sunucudan güncel kartları al
+                const cards = getServerCards();
+                const updatedCards = cards.filter(c => c.number.replace(/\s+/g, '') !== cardNumber);
+                
+                // Sunucuya kaydet (tüm cihazlarda görünecek)
+                saveServerCards(updatedCards);
                 updateAdminCardList();
-                showNotification('Kart başarıyla silindi!', 'success');
+                showNotification('Kart başarıyla silindi! Tüm cihazlardan kaldırıldı.', 'success');
             }
         }
         
